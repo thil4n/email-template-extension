@@ -1,5 +1,7 @@
-// Content script: adds a template picker to Gmail compose windows.
+// Content script: adds a template picker to Gmail compose AND reply windows.
 (() => {
+  // The message body exists in new compose windows and inline replies alike,
+  // so we anchor everything to it. (Replies have no subject box.)
   const BODY_SELECTOR = 'div[contenteditable="true"][role="textbox"]';
   const SUBJECT_SELECTOR = 'input[name="subjectbox"]';
 
@@ -24,28 +26,27 @@
     return esc.replace(/\r\n|\r|\n/g, '<br>');
   }
 
-  // Climb from the subject box to the enclosing compose window
-  // (the nearest ancestor that also contains the message body).
-  function getComposeRoot(el) {
-    let node = el;
+  // Find the subject box for this compose window by climbing up from the
+  // body. Returns null for replies (which reuse the thread's subject).
+  function findSubject(body) {
+    let node = body.parentElement;
     while (node && node !== document.body) {
-      if (node.querySelector && node.querySelector(BODY_SELECTOR)) return node;
+      const s = node.querySelector(SUBJECT_SELECTOR);
+      if (s) return s;
       node = node.parentElement;
     }
-    return document;
+    return null;
   }
 
-  function insertTemplate(root, tpl) {
-    // Subject: only fill it if the user hasn't typed one yet.
-    const subject = root.querySelector(SUBJECT_SELECTOR);
+  function insertTemplate(body, tpl) {
+    // Subject: only fill it if present (compose) and not already typed.
+    const subject = findSubject(body);
     if (subject && tpl.subject && !subject.value.trim()) {
       subject.value = tpl.subject;
       subject.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // Body: insert at the caret, or at the start if the body isn't focused.
-    const body = root.querySelector(BODY_SELECTOR);
-    if (!body) return;
     body.focus();
     const sel = window.getSelection();
     if (!sel.rangeCount || !body.contains(sel.anchorNode)) {
@@ -79,7 +80,7 @@
     }
   }
 
-  function openPopover(btn, root) {
+  function openPopover(btn, body) {
     closePopover();
 
     popover = document.createElement('div');
@@ -141,7 +142,7 @@
         }
 
         row.addEventListener('click', () => {
-          insertTemplate(root, t);
+          insertTemplate(body, t);
           closePopover();
         });
         list.appendChild(row);
@@ -167,22 +168,25 @@
     document.addEventListener('mousedown', onDocDown, true);
   }
 
-  // ---------- inject a button into each compose window ----------
-  function injectButton(subject) {
-    if (subject.dataset.gtplInjected) return;
-    subject.dataset.gtplInjected = '1';
+  // ---------- inject a button onto each compose/reply body ----------
+  function injectButton(body) {
+    if (body.dataset.gtplInjected) return;
+    body.dataset.gtplInjected = '1';
+
+    // IMPORTANT: attach to the body's (non-editable) wrapper, never to the
+    // body itself — anything inside the contenteditable gets sent in the email.
+    const wrapper = body.parentElement;
+    if (!wrapper) return;
+    if (getComputedStyle(wrapper).position === 'static') {
+      wrapper.style.position = 'relative';
+    }
 
     const btn = document.createElement('div');
     btn.className = 'gtpl-btn';
     btn.setAttribute('role', 'button');
     btn.setAttribute('title', 'Insert email template');
     btn.textContent = '📋';
-
-    const container = subject.parentElement;
-    if (getComputedStyle(container).position === 'static') {
-      container.style.position = 'relative';
-    }
-    container.appendChild(btn);
+    wrapper.appendChild(btn);
 
     btn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -191,12 +195,12 @@
         closePopover();
         return;
       }
-      openPopover(btn, getComposeRoot(subject));
+      openPopover(btn, body);
     });
   }
 
   function scan() {
-    document.querySelectorAll(SUBJECT_SELECTOR).forEach(injectButton);
+    document.querySelectorAll(BODY_SELECTOR).forEach(injectButton);
   }
 
   const observer = new MutationObserver(() => scan());
