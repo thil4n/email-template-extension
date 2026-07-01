@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="header">
+      <h1>Email Templates</h1>
+      <button id="new-btn" class="primary">＋ New</button>
+    </div>
+
+    <div id="list" class="list"></div>
+
+    <div id="editor" class="editor hidden">
+      <input id="f-name" class="field" placeholder="Template name (e.g. Meeting follow-up)" />
+      <input id="f-subject" class="field" placeholder="Subject (optional)" />
+      <textarea id="f-body" class="field body" placeholder="Email body…"></textarea>
+      <div class="actions">
+        <button id="save-btn" class="primary">Save</button>
+        <button id="cancel-btn">Cancel</button>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
