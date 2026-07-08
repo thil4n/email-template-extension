@@ -66,14 +66,6 @@
   color: #202124;
   font-weight: 500;
 }
-.gtpl-item-sub {
-  font-size: 11px;
-  color: #5f6368;
-  margin-top: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
 .gtpl-empty {
   padding: 16px 12px;

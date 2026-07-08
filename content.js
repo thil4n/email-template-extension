@@ -3,7 +3,6 @@
   // The message body exists in new compose windows and inline replies alike,
   // so we anchor everything to it. (Replies have no subject box.)
   const BODY_SELECTOR = 'div[contenteditable="true"][role="textbox"]';
-  const SUBJECT_SELECTOR = 'input[name="subjectbox"]';
 
   let templates = [];
 
@@ -26,27 +25,8 @@
     return esc.replace(/\r\n|\r|\n/g, '<br>');
   }
 
-  // Find the subject box for this compose window by climbing up from the
-  // body. Returns null for replies (which reuse the thread's subject).
-  function findSubject(body) {
-    let node = body.parentElement;
-    while (node && node !== document.body) {
-      const s = node.querySelector(SUBJECT_SELECTOR);
-      if (s) return s;
-      node = node.parentElement;
-    }
-    return null;
-  }
-
   function insertTemplate(body, tpl) {
-    // Subject: only fill it if present (compose) and not already typed.
-    const subject = findSubject(body);
-    if (subject && tpl.subject && !subject.value.trim()) {
-      subject.value = tpl.subject;
-      subject.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-
-    // Body: insert at the caret, or at the start if the body isn't focused.
+    // Insert at the caret, or at the start if the body isn't focused.
     body.focus();
     const sel = window.getSelection();
     if (!sel.rangeCount || !body.contains(sel.anchorNode)) {
@@ -112,7 +92,6 @@
         (t) =>
           !f ||
           t.name.toLowerCase().includes(f) ||
-          (t.subject || '').toLowerCase().includes(f) ||
           (t.body || '').toLowerCase().includes(f)
       );
 
@@ -133,13 +112,6 @@
         name.className = 'gtpl-item-name';
         name.textContent = t.name;
         row.appendChild(name);
-
-        if (t.subject) {
-          const sub = document.createElement('div');
-          sub.className = 'gtpl-item-sub';
-          sub.textContent = t.subject;
-          row.appendChild(sub);
-        }
 
         row.addEventListener('click', () => {
           insertTemplate(body, t);

@@ -70,14 +70,6 @@ button.danger:hover {
   font-size: 13px;
   font-weight: 500;
 }
-.row-sub {
-  font-size: 11px;
-  color: #5f6368;
-  margin-top: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 .row button {
   padding: 4px 8px;
   font-size: 12px;
@@ -89,6 +81,17 @@ button.danger:hover {
   color: #5f6368;
   font-size: 13px;
   line-height: 1.5;
+}
+
+.footer {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid #e0e0e0;
+}
+.footer button {
+  flex: 1;
+  font-size: 12px;
 }
 
 .editor {

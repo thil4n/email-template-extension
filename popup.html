@@ -12,9 +12,14 @@
 
     <div id="list" class="list"></div>
 
+    <div id="footer" class="footer">
+      <button id="export-btn">⬇ Export</button>
+      <button id="import-btn">⬆ Import</button>
+      <input id="import-file" type="file" accept="application/json,.json" hidden />
+    </div>
+
     <div id="editor" class="editor hidden">
       <input id="f-name" class="field" placeholder="Template name (e.g. Meeting follow-up)" />
-      <input id="f-subject" class="field" placeholder="Subject (optional)" />
       <textarea id="f-body" class="field body" placeholder="Email body…"></textarea>
       <div class="actions">
         <button id="save-btn" class="primary">Save</button>

@@ -5,14 +5,12 @@ const DEFAULTS = [
   {
     id: 'seed-followup',
     name: 'Meeting follow-up',
-    subject: 'Follow-up on our meeting',
     body:
       'Hi,\n\nThanks for taking the time to meet today. Here is a quick summary of what we discussed and the next steps:\n\n- \n- \n\nLet me know if I missed anything.\n\nBest regards,',
   },
   {
     id: 'seed-intro',
     name: 'Quick intro',
-    subject: '',
     body: 'Hi,\n\nHope you are doing well. I wanted to reach out regarding ...\n\nBest regards,',
   },
 ];
@@ -22,10 +20,11 @@ let editingId = null;
 
 const listEl = document.getElementById('list');
 const editorEl = document.getElementById('editor');
+const footerEl = document.getElementById('footer');
 const newBtn = document.getElementById('new-btn');
 const nameEl = document.getElementById('f-name');
-const subjectEl = document.getElementById('f-subject');
 const bodyEl = document.getElementById('f-body');
+const importFileEl = document.getElementById('import-file');
 
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -68,12 +67,6 @@ function render() {
     name.className = 'row-name';
     name.textContent = t.name;
     info.appendChild(name);
-    if (t.subject) {
-      const sub = document.createElement('div');
-      sub.className = 'row-sub';
-      sub.textContent = t.subject;
-      info.appendChild(sub);
-    }
     row.appendChild(info);
 
     const edit = document.createElement('button');
@@ -100,10 +93,10 @@ function render() {
 function openEditor(t) {
   editingId = t ? t.id : null;
   nameEl.value = t ? t.name : '';
-  subjectEl.value = t ? t.subject || '' : '';
   bodyEl.value = t ? t.body : '';
   editorEl.classList.remove('hidden');
   listEl.classList.add('hidden');
+  footerEl.classList.add('hidden');
   newBtn.classList.add('hidden');
   nameEl.focus();
 }
@@ -111,8 +104,76 @@ function openEditor(t) {
 function closeEditor() {
   editorEl.classList.add('hidden');
   listEl.classList.remove('hidden');
+  footerEl.classList.remove('hidden');
   newBtn.classList.remove('hidden');
 }
+
+// ---------- backup: export / import ----------
+function pad(n) {
+  return String(n).padStart(2, '0');
+}
+
+function exportTemplates() {
+  if (!templates.length) {
+    alert('There are no templates to export yet.');
+    return;
+  }
+  const json = JSON.stringify(templates, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const d = new Date();
+  const stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `email-templates-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function importTemplates(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    let parsed;
+    try {
+      parsed = JSON.parse(reader.result);
+    } catch (e) {
+      alert('That file is not valid JSON.');
+      return;
+    }
+    if (!Array.isArray(parsed)) {
+      alert('This backup file should contain a list of templates.');
+      return;
+    }
+    const valid = parsed
+      .filter((t) => t && typeof t.name === 'string' && typeof t.body === 'string')
+      .map((t) => ({
+        id: uid(),
+        name: t.name,
+        body: t.body,
+      }));
+    if (!valid.length) {
+      alert('No valid templates were found in that file.');
+      return;
+    }
+    if (!confirm(`Import ${valid.length} template(s)? They will be added to your current list.`)) {
+      return;
+    }
+    templates = templates.concat(valid);
+    save();
+    render();
+  };
+  reader.readAsText(file);
+}
+
+document.getElementById('export-btn').addEventListener('click', exportTemplates);
+document.getElementById('import-btn').addEventListener('click', () => importFileEl.click());
+importFileEl.addEventListener('change', () => {
+  const file = importFileEl.files[0];
+  if (file) importTemplates(file);
+  importFileEl.value = ''; // allow re-selecting the same file later
+});
 
 newBtn.addEventListener('click', () => openEditor(null));
 document.getElementById('cancel-btn').addEventListener('click', closeEditor);
@@ -123,18 +184,16 @@ document.getElementById('save-btn').addEventListener('click', () => {
     nameEl.focus();
     return;
   }
-  const subject = subjectEl.value.trim();
   const body = bodyEl.value;
 
   if (editingId) {
     const t = templates.find((x) => x.id === editingId);
     if (t) {
       t.name = name;
-      t.subject = subject;
       t.body = body;
     }
   } else {
-    templates.push({ id: uid(), name, subject, body });
+    templates.push({ id: uid(), name, body });
   }
 
   save();

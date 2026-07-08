@@ -4,11 +4,18 @@ A tiny Chrome extension (Manifest V3) to store frequently used email templates a
 
 ## Features
 
-- Manage templates (name + optional subject + body) from the toolbar popup.
+- Manage templates (name + body) from the toolbar popup.
 - A 📋 button appears in the top-right of every message body — new compose **and inline replies**.
-- Click it to search your templates and insert one at the cursor.
-- On replies the subject is left untouched (Gmail keeps the thread's subject); on new compose the subject is filled only if you haven't typed one.
+- Click it to search your templates and insert the body at the cursor.
 - Templates are stored locally with `chrome.storage.local`.
+- **Export / Import** buttons back up all templates to a JSON file and restore them.
+
+## Backup
+
+- **Export** downloads a `email-templates-backup-YYYY-MM-DD.json` file with all your templates.
+- **Import** reads such a file and *adds* those templates to your current list (non-destructive — it never deletes what you already have). Re-importing the same file creates duplicates, which you can delete.
+
+Keep an exported copy somewhere safe: uninstalling the extension wipes its local storage.
 
 ## Install (unpacked)
 
@@ -32,5 +39,4 @@ If Gmail was already open, reload the tab after loading the extension.
 ## Notes
 
 - Template bodies are plain text; line breaks are preserved. Rich formatting is not stored.
-- The subject is only filled if you haven't already typed one, so it won't overwrite your work.
 - Because Gmail's HTML is generated and can change, the compose selectors may need occasional updates.
